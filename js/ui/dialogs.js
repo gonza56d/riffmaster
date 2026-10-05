@@ -95,7 +95,7 @@ export function shortcutsDialog() {
     ['.', 'Cycle dots'],
     ['T', 'Triplet on / off (→ keeps entering triplets)'],
     ['R', 'Rest on / off for the beat'],
-    ['L', 'Tie to the previous note'],
+    ['L', 'Tie to the previous beat (on an empty beat: hold the whole previous chord)'],
     ['V S H P X', 'Vibrato, slide, hammer-on/pull-off, palm mute, dead note'],
     ['Enter / Insert', 'Insert a beat after the cursor'],
     ['Shift Enter', 'Insert a measure after the current one'],

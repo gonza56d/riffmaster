@@ -52,9 +52,45 @@ export function deleteNote(song, cursor) {
   return { cursor, changed: before !== beat.notes.length };
 }
 
+/** The beat before the cursor's, crossing the barline; null at the start of the track. */
+function previousBeat(song, cursor) {
+  const track = trackOf(song, cursor);
+  if (cursor.beat > 0) return track.measures[cursor.measure].beats[cursor.beat - 1];
+  if (cursor.measure === 0) return null;
+  const beats = track.measures[cursor.measure - 1].beats;
+  return beats[beats.length - 1];
+}
+
+/**
+ * What GP5's L would do here: untie the cursor's note, tie it (taking the previous fret), add a tied note on an
+ * empty string, or, on a beat with no notes, hold every note of the previous beat. Null when nothing applies.
+ */
+function tiePlan(song, cursor) {
+  const beat = beatOf(song, cursor);
+  const prev = previousBeat(song, cursor);
+  const prevNote = prev && !prev.rest ? noteAt(prev, cursor.string) : null;
+  const note = noteAt(beat, cursor.string);
+  if (note) return note.tie || prevNote ? { note, from: prevNote } : null;
+  if (beat.notes.length) return prevNote ? { add: [prevNote] } : null;
+  return prev && !prev.rest && prev.notes.length ? { add: prev.notes } : null;
+}
+
+export const canTie = (song, cursor) => !!tiePlan(song, cursor);
+
+/** GP5 L: tie notes to the previous beat (across the barline too). See tiePlan. */
 export function toggleTie(song, cursor) {
-  const note = noteAt(beatOf(song, cursor), cursor.string);
-  if (note) note.tie = !note.tie;
+  const plan = tiePlan(song, cursor);
+  if (!plan) return cursor;
+  const beat = beatOf(song, cursor);
+  if (plan.note) {
+    plan.note.tie = !plan.note.tie;
+    if (plan.note.tie) plan.note.fret = plan.from.fret;
+    return cursor;
+  }
+  for (const p of plan.add) beat.notes.push(createNote(p.string, p.fret, { tie: true }));
+  beat.notes.sort((a, b) => a.string - b.string);
+  beat.rest = false;
+  beat.empty = false;
   return cursor;
 }
 

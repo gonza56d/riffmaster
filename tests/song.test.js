@@ -253,6 +253,30 @@ test('selections: apply, clear, delete, copy and paste ranges', () => {
   validateSong(song);
 });
 
+test('L ties across the barline: whole chord on an empty beat, one string otherwise', () => {
+  const song = createSong({ measures: 2 });
+  const last = { ...cursor0, beat: 0 };
+  cmd.setDuration(song, last, 'w');
+  cmd.setFret(song, { ...last, string: 4 }, 3);
+  cmd.setFret(song, { ...last, string: 5 }, 5);
+  const next = { ...cursor0, measure: 1, string: 0 };
+  const notes = () => song.tracks[0].measures[1].beats[0].notes.map((n) => `${n.string}:${n.fret}${n.tie ? 't' : ''}`);
+  assert.equal(cmd.canTie(song, cursor0), false, 'nothing before the first beat');
+  assert.equal(cmd.canTie(song, next), true);
+  cmd.toggleTie(song, next);
+  assert.deepEqual(notes(), ['4:3t', '5:5t'], 'an empty beat holds the previous chord');
+  assert.equal(song.tracks[0].measures[1].beats[0].empty, false);
+  cmd.toggleTie(song, { ...next, string: 5 });
+  assert.deepEqual(notes(), ['4:3t', '5:5'], 'L on a tied note unties it');
+  cmd.setFret(song, { ...next, string: 5 }, 7);
+  cmd.toggleTie(song, { ...next, string: 5 });
+  assert.deepEqual(notes(), ['4:3t', '5:5t'], 'tying takes the previous fret');
+  assert.equal(cmd.canTie(song, { ...next, string: 2 }), false, 'no previous note on that string');
+  cmd.deleteNote(song, { ...next, string: 4 });
+  cmd.toggleTie(song, { ...next, string: 4 });
+  assert.deepEqual(notes(), ['4:3t', '5:5t'], 'an empty string in a non-empty beat gets just that note');
+});
+
 test('clipboard paste clamps to string count', () => {
   const song = createSong({ measures: 1, tracks: ['dist1', 'bass'] });
   cmd.setFret(song, { ...cursor0, string: 5 }, 3);

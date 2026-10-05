@@ -297,7 +297,7 @@ class App {
     const allRests = cmd.beatsInRange(this.track, range).every(({ beat }) => beat.rest && !beat.empty);
     this.editBeats((s, c) => cmd.setRest(s, c, !allRests));
   }
-  tie() { this.cancelDigits(); if (this.currentNote()) this.edit((s, c) => cmd.toggleTie(s, c)); }
+  tie() { this.cancelDigits(); if (cmd.canTie(this.song, this.cursor)) this.edit((s, c) => cmd.toggleTie(s, c)); }
   effect(key) { this.cancelDigits(); if (this.currentNote()) this.edit((s, c) => cmd.toggleEffect(s, c, key)); }
   insertBeat() { this.cancelDigits(); this.edit((s, c) => cmd.insertBeat(s, c)); }
   insertMeasure() { this.cancelDigits(); this.edit((s, c) => cmd.insertMeasure(s, c)); }
