@@ -137,8 +137,12 @@ test('tracks: add/remove/tuning/string count', () => {
   assert.equal(song.tracks[0].tuning.length, 7);
   cmd.setInstrument(song, 0, 'bass');
   assert.equal(song.tracks[0].tuning.length, 4);
-  assert.equal(cmd.removeTrack(song, 1), true);
-  assert.equal(cmd.removeTrack(song, 0), false, 'cannot remove the last track');
+  cmd.removeTrack(song, 1);
+  cmd.removeTrack(song, 0);
+  assert.equal(song.tracks.length, 0, 'the last track can be removed');
+  validateSong(song);
+  assert.deepEqual(cmd.clampCursor(song, { track: 3, measure: 1, beat: 2, string: 4 }), { track: 0, measure: 0, beat: 0, string: 0 });
+  assert.equal(song.tracks[cmd.addTrack(song, 'bass')].measures.length, 2);
   validateSong(song);
 });
 
@@ -168,11 +172,39 @@ test('v1 songs: colliding auto-named tracks are renamed, custom names kept', () 
   const names = ['Distortion Guitar 2', 'Distortion Guitar 2', 'Distortion Guitar 3', 'Distortion Guitar 4', 'Distortion Guitar 2', 'Bass', 'Bass 2', 'Drums', 'My Clean'];
   v1.tracks.forEach((t, i) => { t.name = names[i]; });
   const song = fromJSON(JSON.stringify({ ...v1, version: 1 }));
-  assert.equal(song.version, 2);
+  assert.equal(song.version, 3);
   assert.deepEqual(song.tracks.map((t) => t.name), [
     'Distortion Guitar A', 'Distortion Guitar A 2', 'Distortion Guitar A 3', 'Distortion Guitar A 4',
     'Distortion Guitar B', 'Bass', 'Bass 2', 'Drums', 'My Clean',
   ]);
+});
+
+test('R: empty beat -> rest -> empty; notes -> rest; deleting the last note leaves an empty beat', () => {
+  const song = createSong({ measures: 1 });
+  const beat = () => song.tracks[0].measures[0].beats[0];
+  assert.equal(measureStatus(song, song.tracks[0], 0), 'empty');
+  cmd.toggleRest(song, cursor0);
+  assert.deepEqual([beat().rest, beat().empty], [true, false]);
+  assert.equal(measureStatus(song, song.tracks[0], 0), 'incomplete', 'a lone quarter rest is a real rest');
+  cmd.toggleRest(song, cursor0);
+  assert.deepEqual([beat().rest, beat().empty], [true, true]);
+  cmd.setFret(song, cursor0, 5);
+  assert.deepEqual([beat().rest, beat().empty], [false, false]);
+  cmd.toggleRest(song, cursor0);
+  assert.deepEqual([beat().rest, beat().empty, beat().notes.length], [true, false, 0]);
+  cmd.setFret(song, cursor0, 7);
+  cmd.deleteNote(song, cursor0);
+  assert.deepEqual([beat().rest, beat().empty], [true, true]);
+});
+
+test('v2 songs: lone rests become empty measures, other rests stay rests', () => {
+  const v2 = createSong({ measures: 2 });
+  for (const m of v2.tracks[0].measures) for (const b of m.beats) delete b.empty;
+  v2.tracks[0].measures[1].beats.push({ duration: 'q', dots: 0, tuplet: null, rest: true, notes: [] });
+  const song = fromJSON(JSON.stringify({ ...v2, version: 2 }));
+  assert.equal(song.version, 3);
+  assert.equal(measureStatus(song, song.tracks[0], 0), 'empty');
+  assert.deepEqual(song.tracks[0].measures[1].beats.map((b) => b.empty), [false, false]);
 });
 
 test('clipboard paste clamps to string count', () => {

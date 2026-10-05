@@ -17,6 +17,16 @@ const MIGRATIONS = {
     for (const t of auto) t.name = defaultTrackName(s, t.instrument, t);
     return { ...s, version: 2 };
   },
+  // 2 -> 3: beats gained `empty` (unfilled) as opposed to a rest entered on purpose. A lone rest was the
+  // empty-measure placeholder; every other rest stays a rest.
+  2: (s) => {
+    for (const t of s.tracks) {
+      for (const m of t.measures) {
+        for (const b of m.beats) b.empty = m.beats.length === 1 && !!b.rest;
+      }
+    }
+    return { ...s, version: 3 };
+  },
 };
 
 export function migrate(song) {
@@ -45,6 +55,7 @@ export function normalize(song) {
         b.dots ??= 0;
         b.tuplet ??= null;
         b.rest ??= b.notes.length === 0;
+        b.empty ??= false;
         for (const n of b.notes) n.tie ??= false;
       }
     }

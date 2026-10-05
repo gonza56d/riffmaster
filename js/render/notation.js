@@ -61,6 +61,7 @@ export function drawBeat(sys, b, layout) {
   let out = '';
   if (b.rest) {
     if (b.wholeRest) return rest(b.x, b.restY, 'w', ss);
+    if (b.empty) return '';
     out += rest(b.x, b.restY, b.duration, ss);
     if (b.dots) out += dotsFor(b, b.x + hw / 2 + 3, b.restY, 1, ss, b.dots);
     return out;

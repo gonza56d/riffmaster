@@ -32,6 +32,7 @@ export function setFret(song, cursor, fret) {
   const beat = beatOf(song, cursor);
   fret = Math.max(0, Math.min(isDrums(track) ? 127 : MAX_FRET, fret | 0));
   beat.rest = false;
+  beat.empty = false;
   if (isDrums(track)) {
     // One instance of a percussion instrument per beat: drop the same MIDI number on other lines.
     beat.notes = beat.notes.filter((n) => n.fret !== fret || n.string === cursor.string);
@@ -47,7 +48,7 @@ export function deleteNote(song, cursor) {
   const beat = beatOf(song, cursor);
   const before = beat.notes.length;
   beat.notes = beat.notes.filter((n) => n.string !== cursor.string);
-  if (beat.notes.length === 0) beat.rest = true;
+  if (beat.notes.length === 0) { beat.rest = true; beat.empty = true; }
   return { cursor, changed: before !== beat.notes.length };
 }
 
@@ -99,12 +100,12 @@ export function toggleTuplet(song, cursor, n = 3) {
   return cursor;
 }
 
+/** GP5 R: an empty beat or a beat with notes becomes a rest; a rest becomes an empty beat again. */
 export function toggleRest(song, cursor) {
   const beat = beatOf(song, cursor);
-  if (!beat.rest) {
-    beat.rest = true;
-    beat.notes = [];
-  }
+  beat.empty = beat.rest && !beat.empty;
+  beat.rest = true;
+  beat.notes = [];
   return cursor;
 }
 
@@ -203,9 +204,7 @@ export function addTrack(song, instrument) {
 }
 
 export function removeTrack(song, ti) {
-  if (song.tracks.length <= 1) return false;
   song.tracks.splice(ti, 1);
-  return true;
 }
 
 export function renameTrack(song, ti, name) {
@@ -230,7 +229,7 @@ export function setTrackTuning(song, ti, tuning) {
   for (const m of t.measures) {
     for (const b of m.beats) {
       b.notes = b.notes.filter((n) => n.string < tuning.length);
-      if (b.notes.length === 0 && !b.rest) b.rest = true;
+      if (b.notes.length === 0 && !b.rest) { b.rest = true; b.empty = true; }
     }
   }
 }
@@ -252,7 +251,7 @@ export function pasteBeat(song, cursor, beat) {
   const track = trackOf(song, cursor);
   const clone = structuredClone(beat);
   clone.notes = clone.notes.filter((n) => n.string < stringCount(track));
-  if (clone.notes.length === 0) clone.rest = true;
+  if (clone.notes.length === 0 && !clone.rest) { clone.rest = true; clone.empty = true; }
   measureOf(song, cursor).beats[cursor.beat] = clone;
   return cursor;
 }
@@ -262,7 +261,7 @@ export function pasteMeasure(song, cursor, measure) {
   const clone = structuredClone(measure);
   for (const b of clone.beats) {
     b.notes = b.notes.filter((n) => n.string < stringCount(track));
-    if (b.notes.length === 0) b.rest = true;
+    if (b.notes.length === 0 && !b.rest) { b.rest = true; b.empty = true; }
   }
   track.measures[cursor.measure] = clone;
   return clampCursor(song, { ...cursor, beat: 0 });

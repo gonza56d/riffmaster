@@ -31,6 +31,7 @@ class App {
     this.wrap = document.getElementById('score-wrap');
     this.view = new ScoreView(this.wrap, document.getElementById('score'), {
       onClick: (hit) => this.nav(() => ({ ...this.cursor, measure: hit.mi, beat: hit.bi, string: hit.string })),
+      onAddTrack: (instrument) => { this.addTrack(instrument); this.focusScore(); },
     });
     this.toolbar = buildToolbar(document.getElementById('toolbar'), this);
     this.trackPanel = buildTrackPanel(document.getElementById('track-panel'), this);
@@ -88,7 +89,7 @@ class App {
     const noteInfo = note ? (isDrums(t) ? `${drumInfo(note.fret).name} (${note.fret})` : `fret ${note.fret}`) : '';
     const pending = this.pending ? ` · typing ${this.pending.digits}…` : '';
     this.statusbar.innerHTML = `
-      <span>Bar ${cursor.measure + 1} · Beat ${cursor.beat + 1} · String ${cursor.string + 1}${noteInfo ? ' · ' + noteInfo : ''}${pending}</span>
+      <span>${t ? `Bar ${cursor.measure + 1} · Beat ${cursor.beat + 1} · String ${cursor.string + 1}${noteInfo ? ' · ' + noteInfo : ''}${pending}` : ''}</span>
       <span style="color:var(--warn)">${status === 'incomplete' ? 'Measure incomplete' : status === 'overfull' ? 'Measure overfull' : ''}</span>
       <span class="right"><span>${this.player?.statusText?.() ?? ''}</span><span>Press ? for shortcuts</span></span>`;
   }
@@ -272,7 +273,6 @@ class App {
   nextTrack(dir) { this.selectTrack(Math.max(0, Math.min(this.song.tracks.length - 1, this.cursor.track + dir))); }
   addTrack(instrument) { this.edit((s) => { const ti = cmd.addTrack(s, instrument); return { ...this.cursor, track: ti, string: 0 }; }); }
   async removeTrack(ti) {
-    if (this.song.tracks.length <= 1) return;
     if (!(await confirmDialog({ title: 'Remove track', message: `Remove "${this.song.tracks[ti].name}" and all its notes?`, okText: 'Remove', danger: true }))) return;
     this.edit((s, c) => { cmd.removeTrack(s, ti); return { ...c, track: Math.min(ti, s.tracks.length - 1) }; });
     this.focusScore();
@@ -288,6 +288,15 @@ class App {
   // ---------- playback (wired by audio module) ----------
   togglePlay() { this.player?.toggle?.(); }
   stop() { this.player?.stop?.(); }
+}
+
+// Editing, navigation and playback need a track; with none (the "add an instrument" page) they do nothing.
+for (const name of ['typeDigit', 'insertDrum', 'deleteNote', 'deleteBeat', 'setDuration', 'longer', 'shorter', 'dot', 'tuplet', 'rest',
+  'tie', 'effect', 'insertBeat', 'insertMeasure', 'deleteMeasure', 'copyBeat', 'pasteBeat', 'copyMeasure', 'pasteMeasure',
+  'moveLeft', 'moveRight', 'moveUp', 'moveDown', 'moveMeasure', 'toMeasureStart', 'toMeasureEnd', 'toSongStart', 'toSongEnd',
+  'editTimeSig', 'editMarker', 'togglePlay']) {
+  const fn = App.prototype[name];
+  App.prototype[name] = function (...args) { return this.track ? fn.apply(this, args) : undefined; };
 }
 
 const app = new App();

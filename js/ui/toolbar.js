@@ -109,6 +109,7 @@ export function buildToolbar(el, app) {
       el.querySelector('[data-action=play]').classList.toggle('active', app.isPlaying());
       el.querySelector('[data-action=metronome]').classList.toggle('active', app.metronomeOn);
       el.querySelector('[data-action=countin]').classList.toggle('active', app.countIn);
+      for (const c of el.querySelectorAll('.rhythm button, .rhythm select, .measure button, [data-action=play]')) c.disabled = !app.track;
       el.querySelector('[data-action=theme]').textContent = currentTheme() === 'dark' ? '☀' : '☾';
     },
     cloudSlot: el.querySelector('.cloud'),

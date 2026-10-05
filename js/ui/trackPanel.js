@@ -79,7 +79,7 @@ export function buildTrackPanel(el, app) {
   function renderDetails() {
     const { song, cursor } = app;
     const t = song.tracks[cursor.track];
-    if (!t) { details.innerHTML = ''; return; }
+    if (!t) { details.innerHTML = ''; legend.classList.add('hidden'); return; }
     const drums = isDrums(t);
     const family = INSTRUMENTS[t.instrument].family;
     const presets = TUNING_PRESETS.map((p, i) => ({ ...p, i })).filter((p) => p.family === family);
@@ -98,7 +98,7 @@ export function buildTrackPanel(el, app) {
       <div class="tuning-editor">${t.tuning.map((m, i) => `
         <div class="string"><button data-action="tune" data-string="${i}" data-delta="1" title="Up a semitone">+</button><span class="note">${midiName(m)}</span><button data-action="tune" data-string="${i}" data-delta="-1" title="Down a semitone">−</button></div>`).join('')}
       </div>`}
-      <div class="row"><button data-action="remove" ${song.tracks.length <= 1 ? 'disabled' : ''}>Remove track</button></div>`;
+      <div class="row"><button data-action="remove">Remove track</button></div>`;
     legend.classList.toggle('hidden', !drums);
     if (drums) {
       legend.innerHTML = DRUM_LEGEND.map((midi) => `<button data-midi="${midi}" title="Insert ${esc(drumInfo(midi).name)} (${midi})">${midi} ${esc(drumInfo(midi).name)}</button>`).join('');

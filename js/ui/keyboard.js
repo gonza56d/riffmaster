@@ -43,8 +43,8 @@ export function installKeyboard(app) {
       case 'Enter': ev.shiftKey ? app.insertMeasure() : app.insertBeat(); break;
       case 'Insert': app.insertBeat(); break;
       case 'Delete': case 'Backspace': ev.shiftKey ? app.deleteBeat() : app.deleteNote(); break;
-      case '+': case '=': app.longer(); break;
-      case '-': case '_': app.shorter(); break;
+      case '+': case '=': app.shorter(); break; // GP5: + is the next faster note value
+      case '-': case '_': app.longer(); break;
       case '.': app.dot(); break;
       case ' ': app.togglePlay(); break;
       case '?': app.dispatch('help'); break;

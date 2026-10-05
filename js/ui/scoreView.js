@@ -1,9 +1,17 @@
 // Owns the score container: renders the current track, positions overlays, maps clicks to the cursor.
 import { layoutTrack, hitTest } from '../render/layout.js';
 import { renderScoreSVG, cursorMarkup, playheadMarkup, beatBox } from '../render/score.js';
+import { INSTRUMENTS } from '../model/song.js';
+import { esc } from '../render/glyphs.js';
+
+const EMPTY_STATE = `
+  <div class="empty-state">
+    <p>Start by adding an instrument</p>
+    <div class="actions">${Object.entries(INSTRUMENTS).map(([k, v]) => `<button data-instrument="${k}">${esc(v.name)}</button>`).join('')}</div>
+  </div>`;
 
 export class ScoreView {
-  constructor(wrap, inner, { onClick }) {
+  constructor(wrap, inner, { onClick, onAddTrack }) {
     this.wrap = wrap;
     this.inner = inner;
     this.onClick = onClick;
@@ -13,6 +21,7 @@ export class ScoreView {
     this.cursor = null;
     this.playhead = null;
     inner.addEventListener('mousedown', (ev) => this.handleClick(ev));
+    inner.addEventListener('click', (ev) => { const btn = ev.target.closest('[data-instrument]'); if (btn) onAddTrack(btn.dataset.instrument); });
     this.resize = new ResizeObserver(() => { if (this.song) this.render(this.song, this.trackIndex, this.cursor); });
     this.resize.observe(wrap);
   }
@@ -26,7 +35,7 @@ export class ScoreView {
     this.trackIndex = trackIndex;
     this.cursor = cursor;
     const width = this.width();
-    if (!song.tracks.length) { this.inner.innerHTML = ''; this.layout = null; return; }
+    if (!song.tracks.length) { this.inner.innerHTML = EMPTY_STATE; this.layout = null; this.svg = this.cursorLayer = this.playheadLayer = null; return; }
     this.layout = layoutTrack(song, trackIndex, { width });
     this.inner.innerHTML = renderScoreSVG(this.layout);
     this.svg = this.inner.querySelector('svg');

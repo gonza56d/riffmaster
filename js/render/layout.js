@@ -87,7 +87,7 @@ function layoutMeasure(song, track, mi, o, clef) {
     const width = Math.max(rhythm, staffW, tabW);
     beats.push({
       bi, beat, onset, len, lenN, rhythm, width,
-      rest: beat.rest, duration: beat.duration, dots: beat.dots, tuplet: beat.tuplet,
+      rest: beat.rest, empty: beat.empty, duration: beat.duration, dots: beat.dots, tuplet: beat.tuplet,
       notes: items, accColumns,
       beams: beamCount(beat.duration),
       group: groupIndexAt(boundaries, onset),

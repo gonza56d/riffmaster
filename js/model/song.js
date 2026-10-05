@@ -2,7 +2,7 @@ import { beatsLength, measureLength, cmp } from './duration.js';
 import { TUNING_PRESETS } from './tuning.js';
 import { DRUM_TAB_LINES } from './drumMap.js';
 
-export const SONG_VERSION = 2;
+export const SONG_VERSION = 3;
 
 export const INSTRUMENTS = {
   dist1: { name: 'Distortion Guitar A', family: 'guitar', clef: 'treble', color: 'dist1' },
@@ -22,8 +22,12 @@ export function createNote(string, fret, extra = {}) {
   return { string, fret, tie: false, ...extra };
 }
 
-export function createBeat({ duration = 'q', dots = 0, tuplet = null, rest = true, notes = [] } = {}) {
-  return { duration, dots, tuplet, rest, notes };
+/**
+ * `rest` means the beat is silent. `empty` marks a silent beat nobody has filled yet: it takes up its
+ * duration but draws nothing, like a GP5 empty beat. A rest entered with R is `rest && !empty`.
+ */
+export function createBeat({ duration = 'q', dots = 0, tuplet = null, rest = true, empty = rest, notes = [] } = {}) {
+  return { duration, dots, tuplet, rest, empty, notes };
 }
 
 export function createMeasure() {
@@ -83,9 +87,9 @@ export const measureCount = (song) => song.measureHeaders.length;
 export const timeSigAt = (song, mi) => song.measureHeaders[mi].timeSig;
 export const tempoAt = (song, mi) => song.measureHeaders[mi]?.tempo ?? song.tempo;
 
-/** True when the measure holds nothing but a single rest beat (rendered as a whole-measure rest). */
+/** True when the measure holds nothing but a single empty beat (rendered as a whole-measure rest). */
 export function isEmptyMeasure(measure) {
-  return measure.beats.length === 1 && measure.beats[0].rest;
+  return measure.beats.length === 1 && measure.beats[0].rest && measure.beats[0].empty;
 }
 
 /** 'empty' | 'complete' | 'incomplete' | 'overfull' */

@@ -49,7 +49,7 @@ Press `?` in the app for the full list. The essentials:
 | `←` `→` | Previous / next beat. `→` on the last beat of an incomplete measure adds a beat; on a complete measure it moves to the next one (creating it at the end of the song). |
 | `↑` `↓` | Move between strings |
 | `0`–`9` | Type a fret (two digits within half a second). On drums, type the MIDI number or click the legend. |
-| `+` `−` | Longer / shorter note value |
+| `+` `−` | Shorter (faster) / longer (slower) note value, as in GP5 |
 | `.` `T` `R` `L` | Dot · triplet · rest · tie |
 | `V` `S` `H` `P` `X` | Vibrato · slide · hammer-on · palm mute · dead note |
 | `Enter` / `Shift+Enter` | Insert beat / insert measure |
@@ -102,7 +102,8 @@ tests/                      node:test suites for the pure modules
 
 - Guitars are written on the treble clef and basses on the bass clef, both an octave above sounding
   pitch, as in GP5. No key signature: accidentals are sharps, tracked per measure with naturals.
-- A measure containing only a rest is drawn as a whole-measure rest. Incomplete or overfull measures are
+- New beats are empty (nothing drawn) until they get a note or a rest (`R`), as in GP5. A measure
+  holding a single empty beat is drawn as a whole-measure rest. Incomplete or overfull measures are
   highlighted in red (like GP5) but still play at their true positions.
 - The percussion map (`js/model/drumMap.js`) is a plain table; adjust positions or noteheads there if
   your conventions differ.
