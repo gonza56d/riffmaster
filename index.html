@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Riffmaster</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%276%27 fill=%27%23d2452c%27/%3E%3Cpath d=%27M8 24V9l3 2v13zM14 24V9l3 2v13zM20 24V9l3 2v13z%27 fill=%27%23fff%27/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/theme.css">
+  <link rel="stylesheet" href="css/base.css">
+  <script>
+    // Apply the saved theme before first paint to avoid a flash.
+    try {
+      const t = localStorage.getItem('riffmaster.theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      document.documentElement.dataset.theme = t;
+    } catch (e) {}
+  </script>
+</head>
+<body>
+  <div id="app">
+    <div class="toolbar" id="toolbar"></div>
+    <div class="main">
+      <aside class="track-panel" id="track-panel"></aside>
+      <div class="score-wrap" id="score-wrap" tabindex="0" aria-label="Score editor">
+        <div class="score-inner" id="score"></div>
+      </div>
+    </div>
+    <div class="statusbar" id="statusbar"></div>
+  </div>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

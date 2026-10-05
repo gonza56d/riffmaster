@@ -1,0 +1,11 @@
+{
+  "name": "riffmaster",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Guitar Pro 5-like tab composer. Pure JS, no build step.",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "serve": "python3 -m http.server 8080"
+  }
+}
