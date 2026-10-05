@@ -48,15 +48,20 @@ Press `?` in the app for the full list. The essentials:
 |---|---|
 | `←` `→` | Previous / next beat. `→` on the last beat of an incomplete measure adds a beat; on a complete measure it moves to the next one (creating it at the end of the song). |
 | `↑` `↓` | Move between strings |
+| Drag, `Shift+←` `Shift+→`, `Shift`+click | Select beats (`Ctrl+A` all, `Esc` clears). Rhythm keys, Delete, copy/cut/paste and play act on the selection. |
 | `0`–`9` | Type a fret (two digits within half a second). On drums, type the MIDI number or click the legend. |
 | `+` `−` | Shorter (faster) / longer (slower) note value, as in GP5 |
 | `.` `T` `R` `L` | Dot · triplet · rest · tie |
 | `V` `S` `H` `P` `X` | Vibrato · slide · hammer-on · palm mute · dead note |
 | `Enter` / `Shift+Enter` | Insert beat / insert measure |
 | `Delete` / `Shift+Delete` / `Ctrl+Delete` | Delete note / beat / measure |
-| `Ctrl+C` `Ctrl+V` (+`Shift`) | Copy / paste beat (measure) |
+| `Ctrl+C` `Ctrl+X` `Ctrl+V` (+`Shift`) | Copy / cut / paste beat or selection (measure) |
 | `Ctrl+Z` / `Ctrl+Shift+Z` | Undo / redo |
 | `Space` | Play from the cursor / stop |
+
+Shortcuts always reach the score, even right after clicking a button or menu; only text fields
+(title, tempo, track name) keep their keys, and `Esc` leaves them. **Hear notes** in the toolbar plays each
+note as you enter it. The sidebar lists section markers; click one to jump to it.
 
 `Ctrl` is `⌘` on macOS.
 

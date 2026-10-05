@@ -222,6 +222,37 @@ test('→ keeps the tuplet of the current beat while it fits', () => {
   assert.equal(plain.tracks[0].measures[0].beats[1].tuplet, null, 'plain beats stay plain');
 });
 
+test('selections: apply, clear, delete, copy and paste ranges', () => {
+  const song = createSong({ measures: 3 });
+  const frets = (mi) => song.tracks[0].measures[mi].beats.map((b) => (b.notes.length ? b.notes[0].fret : b.empty ? '_' : 'r'));
+  let c = cursor0;
+  for (const f of [1, 2, 3, 4, 5, 6]) { cmd.setFret(song, c, f); c = cmd.moveRight(song, c).cursor; }
+  assert.deepEqual([frets(0), frets(1)], [[1, 2, 3, 4], [5, 6, '_']]);
+  const range = { from: { measure: 0, beat: 2 }, to: { measure: 1, beat: 1 } };
+  assert.deepEqual(cmd.beatsInRange(song.tracks[0], range).map((x) => x.beat.notes[0].fret), [3, 4, 5, 6]);
+
+  cmd.forRange(song, 0, range, (s, at) => cmd.setDuration(s, at, 'e'));
+  assert.deepEqual(song.tracks[0].measures[1].beats.map((b) => b.duration), ['e', 'e', 'q']);
+
+  const clip = cmd.copyRange(song, 0, range);
+  assert.equal(clip.whole, false);
+  const pasted = cmd.pasteRange(song, { ...cursor0, measure: 2 }, clip);
+  assert.deepEqual([frets(2), frets(3)], [[3, 4], [5, 6]], 'partial copy keeps its bar split and replaces empty bars');
+  assert.deepEqual(pasted, { from: { measure: 2, beat: 0 }, to: { measure: 3, beat: 1 } });
+
+  const whole = cmd.copyRange(song, 0, { from: { measure: 0, beat: 0 }, to: { measure: 0, beat: 3 } });
+  assert.equal(whole.whole, true);
+  cmd.pasteRange(song, { ...cursor0, measure: 2, beat: 1 }, whole);
+  assert.deepEqual(frets(2), [1, 2, 3, 4], 'whole measures replace the target measure');
+
+  cmd.clearRange(song, 0, range);
+  assert.deepEqual([frets(0), frets(1)], [[1, 2, '_', '_'], ['_', '_', '_']]);
+  const at = cmd.deleteRange(song, 0, { from: { measure: 0, beat: 1 }, to: { measure: 1, beat: 2 } });
+  assert.deepEqual([frets(0), frets(1)], [[1], ['_']], 'an emptied measure keeps one empty beat');
+  assert.deepEqual([at.measure, at.beat], [0, 0], 'cursor clamps into what is left');
+  validateSong(song);
+});
+
 test('clipboard paste clamps to string count', () => {
   const song = createSong({ measures: 1, tracks: ['dist1', 'bass'] });
   cmd.setFret(song, { ...cursor0, string: 5 }, 3);

@@ -1,6 +1,6 @@
 // Owns the score container: renders the current track, positions overlays, maps clicks to the cursor.
 import { layoutTrack, hitTest } from '../render/layout.js';
-import { renderScoreSVG, cursorMarkup, playheadMarkup, beatBox } from '../render/score.js';
+import { renderScoreSVG, cursorMarkup, selectionMarkup, playheadMarkup, beatBox } from '../render/score.js';
 import { INSTRUMENTS } from '../model/song.js';
 import { esc } from '../render/glyphs.js';
 
@@ -19,10 +19,11 @@ export class ScoreView {
     this.song = null;
     this.trackIndex = 0;
     this.cursor = null;
+    this.selection = null;
     this.playhead = null;
-    inner.addEventListener('mousedown', (ev) => this.handleClick(ev));
+    inner.addEventListener('mousedown', (ev) => this.handleMouseDown(ev));
     inner.addEventListener('click', (ev) => { const btn = ev.target.closest('[data-instrument]'); if (btn) onAddTrack(btn.dataset.instrument); });
-    this.resize = new ResizeObserver(() => { if (this.song) this.render(this.song, this.trackIndex, this.cursor); });
+    this.resize = new ResizeObserver(() => { if (this.song) this.render(this.song, this.trackIndex, this.cursor, this.selection); });
     this.resize.observe(wrap);
   }
 
@@ -30,10 +31,11 @@ export class ScoreView {
     return Math.max(420, this.wrap.clientWidth - 16);
   }
 
-  render(song, trackIndex, cursor) {
+  render(song, trackIndex, cursor, selection = null) {
     this.song = song;
     this.trackIndex = trackIndex;
     this.cursor = cursor;
+    this.selection = selection;
     const width = this.width();
     if (!song.tracks.length) { this.inner.innerHTML = EMPTY_STATE; this.layout = null; this.svg = this.cursorLayer = this.playheadLayer = null; return; }
     this.layout = layoutTrack(song, trackIndex, { width });
@@ -45,10 +47,11 @@ export class ScoreView {
     if (this.playhead) this.setPlayhead(this.playhead.mi, this.playhead.bi, false);
   }
 
-  setCursor(cursor, { scroll = true } = {}) {
+  setCursor(cursor, { scroll = true, selection = this.selection } = {}) {
     this.cursor = cursor;
+    this.selection = selection;
     if (!this.layout || !this.cursorLayer) return;
-    this.cursorLayer.innerHTML = cursor ? cursorMarkup(this.layout, cursor) : '';
+    this.cursorLayer.innerHTML = (selection ? selectionMarkup(this.layout, selection) : '') + (cursor ? cursorMarkup(this.layout, cursor) : '');
     if (cursor && scroll) this.scrollTo(cursor.measure, cursor.beat);
   }
 
@@ -74,13 +77,24 @@ export class ScoreView {
     else if (bottom > scrollTop + clientHeight - 10) this.wrap.scrollTop = bottom - clientHeight + 10;
   }
 
-  handleClick(ev) {
-    if (!this.layout || ev.button !== 0) return;
+  hitAt(ev) {
     const rect = this.svg.getBoundingClientRect();
-    const x = ev.clientX - rect.left, y = ev.clientY - rect.top;
-    const hit = hitTest(this.layout, x, y);
-    if (hit) this.onClick(hit);
+    return hitTest(this.layout, ev.clientX - rect.left, ev.clientY - rect.top);
+  }
+
+  /** Click moves the cursor (Shift+click extends the selection); dragging selects the beats passed over. */
+  handleMouseDown(ev) {
+    if (!this.layout || ev.button !== 0) return;
+    const hit = this.hitAt(ev);
+    if (hit) this.onClick(hit, { extend: ev.shiftKey });
     this.wrap.focus({ preventScroll: true });
     ev.preventDefault();
+    const move = (e) => {
+      const h = this.layout && this.hitAt(e);
+      if (h && (h.mi !== this.cursor.measure || h.bi !== this.cursor.beat)) this.onClick(h, { extend: true });
+    };
+    const up = () => { window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', up); };
+    window.addEventListener('mousemove', move);
+    window.addEventListener('mouseup', up);
   }
 }

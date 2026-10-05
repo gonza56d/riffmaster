@@ -12,10 +12,12 @@ export function buildTrackPanel(el, app) {
       </select>
     </header>
     <div class="track-list"></div>
+    <div class="marker-list"></div>
     <div class="track-details"></div>
     <div class="drum-legend hidden"></div>`;
 
   const list = el.querySelector('.track-list');
+  const markerList = el.querySelector('.marker-list');
   const details = el.querySelector('.track-details');
   const legend = el.querySelector('.drum-legend');
   const add = el.querySelector('[data-field=add]');
@@ -29,6 +31,13 @@ export function buildTrackPanel(el, app) {
     if (btn?.classList.contains('mute')) app.toggleMute(ti);
     else if (btn?.classList.contains('solo')) app.toggleSolo(ti);
     else app.selectTrack(ti);
+    app.focusScore();
+  });
+
+  markerList.addEventListener('click', (ev) => {
+    const item = ev.target.closest('[data-measure]');
+    if (!item) return;
+    app.goToMeasure(Number(item.dataset.measure));
     app.focusScore();
   });
 
@@ -76,6 +85,17 @@ export function buildTrackPanel(el, app) {
       </div>`).join('');
   }
 
+  /** Section markers in song order; the one the cursor is in is highlighted. Click to jump there. */
+  function renderMarkers() {
+    const { song, cursor } = app;
+    markerList.classList.toggle('hidden', !song.tracks.length);
+    const markers = song.measureHeaders.map((h, mi) => ({ mi, name: h.marker })).filter((m) => m.name);
+    const current = markers.filter((m) => m.mi <= cursor.measure).pop()?.mi;
+    markerList.innerHTML = `<div class="section-title">Markers</div>` + (markers.length
+      ? markers.map((m) => `<button class="marker-item ${m.mi === current ? 'current' : ''}" data-measure="${m.mi}" title="Go to bar ${m.mi + 1}"><span class="bar">${m.mi + 1}</span>${esc(m.name)}</button>`).join('')
+      : `<div class="hint">None yet. Add one with the Marker button.</div>`);
+  }
+
   function renderDetails() {
     const { song, cursor } = app;
     const t = song.tracks[cursor.track];
@@ -106,7 +126,8 @@ export function buildTrackPanel(el, app) {
   }
 
   return {
-    update() { renderList(); renderDetails(); },
+    update() { renderList(); renderMarkers(); renderDetails(); },
     updateList() { renderList(); },
+    updateMarkers() { renderMarkers(); },
   };
 }

@@ -86,6 +86,7 @@ export function timeSigDialog(current) {
 export function shortcutsDialog() {
   const rows = [
     ['← →', 'Previous / next beat (→ appends a beat in an incomplete measure)'],
+    ['Drag · Shift ← → · Shift click', 'Select beats (Ctrl A selects everything, Esc clears)'],
     ['↑ ↓', 'Move between strings'],
     ['Ctrl ← →', 'Previous / next measure'],
     ['Ctrl ↑ ↓', 'Previous / next track'],
@@ -98,16 +99,16 @@ export function shortcutsDialog() {
     ['V S H P X', 'Vibrato, slide, hammer-on/pull-off, palm mute, dead note'],
     ['Enter / Insert', 'Insert a beat after the cursor'],
     ['Shift Enter', 'Insert a measure after the current one'],
-    ['Delete / Backspace', 'Delete the note under the cursor'],
-    ['Shift Delete', 'Delete the beat'],
+    ['Delete / Backspace', 'Delete the note under the cursor (with a selection: clear it)'],
+    ['Shift Delete', 'Delete the beat (or the selected beats)'],
     ['Ctrl Delete', 'Delete the measure'],
-    ['Ctrl C / Ctrl V', 'Copy / paste beat'],
+    ['Ctrl C / X / V', 'Copy / cut / paste the beat or the selection'],
     ['Ctrl Shift C / V', 'Copy / paste measure'],
     ['Ctrl Z / Ctrl Shift Z', 'Undo / redo'],
-    ['Space', 'Play from the cursor / stop'],
+    ['Space', 'Play from the cursor (or the selection) / stop'],
     ['Home / End', 'First / last beat of the measure'],
     ['Ctrl Home / End', 'Start / end of the song'],
-    ['Escape', 'Cancel pending fret entry'],
+    ['Escape', 'Cancel pending fret entry, stop, clear the selection'],
   ];
   const isMac = navigator.platform.toLowerCase().includes('mac');
   const mod = isMac ? '⌘' : 'Ctrl';

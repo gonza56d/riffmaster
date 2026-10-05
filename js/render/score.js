@@ -90,6 +90,27 @@ export function cursorMarkup(layout, cursor) {
     svgEl('rect', { x: f(b.x - 9), y: f(y - layout.tabSpace / 2 + 0.5), width: 18, height: f(layout.tabSpace - 1), rx: 2, class: 'cursor-cell' }, null);
 }
 
+/** Shading behind a selected range of beats ({ from, to }): one band per system it touches. */
+export function selectionMarkup(layout, range) {
+  let out = '';
+  for (const sys of layout.systems) {
+    const beats = [];
+    for (const m of sys.measures) {
+      if (m.mi < range.from.measure || m.mi > range.to.measure) continue;
+      for (const b of m.beats) {
+        if (m.mi === range.from.measure && b.bi < range.from.beat) continue;
+        if (m.mi === range.to.measure && b.bi > range.to.beat) continue;
+        beats.push(b);
+      }
+    }
+    if (!beats.length) continue;
+    const first = beats[0], last = beats[beats.length - 1];
+    const x1 = first.x - first.w / 2, x2 = last.x + last.w / 2;
+    out += svgEl('rect', { x: f(x1), y: f(sys.staffTop - 6), width: f(x2 - x1), height: f(sys.tabBottom - sys.staffTop + 12), rx: 3, class: 'selection' }, null);
+  }
+  return out;
+}
+
 export function playheadMarkup(layout, mi, bi) {
   const entry = layout.beatMap.get(`${mi}:${bi}`);
   if (!entry) return '';

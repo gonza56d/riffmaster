@@ -37,6 +37,7 @@ export function buildToolbar(el, app) {
       </select>
       <button data-action="metronome" title="Metronome">Metro</button>
       <button data-action="countin" title="One measure count-in before playing">Count-in</button>
+      <label class="check" title="Play each note as you enter it"><input type="checkbox" data-field="hear"> Hear notes</label>
     </div>
     <div class="sep"></div>
     <div class="group rhythm">
@@ -81,6 +82,8 @@ export function buildToolbar(el, app) {
   tempo.addEventListener('change', () => { app.setTempo(Number(tempo.value)); app.focusScore(); });
   const speed = el.querySelector('[data-field=speed]');
   speed.addEventListener('change', () => { app.setSpeed(Number(speed.value)); app.focusScore(); });
+  const hear = el.querySelector('[data-field=hear]');
+  hear.addEventListener('change', () => { app.setHearNotes(hear.checked); app.focusScore(); });
   const tuplet = el.querySelector('[data-field=tuplet]');
   tuplet.addEventListener('change', () => { app.tuplet(tuplet.value ? Number(tuplet.value) : null, { exact: true }); app.focusScore(); });
 
@@ -91,12 +94,13 @@ export function buildToolbar(el, app) {
       title.value = song.title;
       if (document.activeElement !== tempo) tempo.value = song.tempo;
       speed.value = String(app.speed);
+      hear.checked = app.hearNotes;
       for (const b of el.querySelectorAll('.dur')) b.classList.toggle('active', !!beat && beat.duration === b.dataset.value);
       el.querySelector('[data-action=dot]').classList.toggle('active', !!beat && beat.dots > 0);
       el.querySelector('[data-action=dot]').textContent = beat && beat.dots === 2 ? '••' : '•';
       tuplet.value = beat && beat.tuplet ? String(beat.tuplet.n) : '';
       el.querySelector('[data-action=triplet]').classList.toggle('active', beat?.tuplet?.n === 3);
-      el.querySelector('[data-action=rest]').classList.toggle('active', !!beat && beat.rest);
+      el.querySelector('[data-action=rest]').classList.toggle('active', !!beat && beat.rest && !beat.empty);
       const note = app.currentNote();
       el.querySelector('[data-action=tie]').classList.toggle('active', !!note && note.tie);
       const ts = song.measureHeaders[cursor.measure].timeSig;

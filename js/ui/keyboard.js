@@ -1,11 +1,22 @@
 // Maps keyboard input to app actions. GP5-style, keyboard-first.
 
-const isEditableTarget = (el) => el && (el.tagName === 'INPUT' || el.tagName === 'SELECT' || el.tagName === 'TEXTAREA' || el.isContentEditable);
+// Only fields you type into keep their keys. On any other control (buttons, menus, checkboxes, sliders) the
+// app's shortcuts win, so Space plays instead of pressing the last button clicked, arrows move the cursor, etc.
+const TEXT_TYPES = new Set(['text', 'number', 'search', 'email', 'password', 'url', 'tel']);
+const isTextEntry = (el) => el && ((el.tagName === 'INPUT' && TEXT_TYPES.has(el.type)) || el.tagName === 'TEXTAREA' || el.isContentEditable);
 
 export function installKeyboard(app) {
+  // Buttons never take focus on click, so keys keep going to the score.
+  document.addEventListener('mousedown', (ev) => { if (ev.target.closest('button') && !ev.target.closest('dialog')) ev.preventDefault(); });
+  // A control focused when the key went down must not activate when it comes up.
+  document.addEventListener('keyup', (ev) => { if ((ev.key === ' ' || ev.key === 'Enter') && !isTextEntry(ev.target) && !document.querySelector('dialog[open]')) ev.preventDefault(); });
+
   document.addEventListener('keydown', (ev) => {
-    if (isEditableTarget(ev.target)) return;
     if (document.querySelector('dialog[open]')) return;
+    if (isTextEntry(ev.target)) {
+      if (ev.key === 'Escape') { ev.target.blur(); app.focusScore(); }
+      return;
+    }
     const mod = ev.metaKey || ev.ctrlKey;
     const key = ev.key;
     let handled = true;
@@ -15,7 +26,9 @@ export function installKeyboard(app) {
         case 'z': ev.shiftKey ? app.redo() : app.undo(); break;
         case 'y': app.redo(); break;
         case 'c': ev.shiftKey ? app.copyMeasure() : app.copyBeat(); break;
+        case 'x': app.cut(); break;
         case 'v': ev.shiftKey ? app.pasteMeasure() : app.pasteBeat(); break;
+        case 'a': app.selectAll(); break;
         case 'arrowleft': app.moveMeasure(-1); break;
         case 'arrowright': app.moveMeasure(1); break;
         case 'arrowup': app.nextTrack(-1); break;
@@ -27,15 +40,15 @@ export function installKeyboard(app) {
         case 'o': app.open(); break;
         default: handled = false;
       }
-      if (handled) ev.preventDefault();
+      if (handled) { ev.preventDefault(); claimFocus(ev, app); }
       return;
     }
 
-    if (/^[0-9]$/.test(key)) { app.typeDigit(Number(key)); ev.preventDefault(); return; }
+    if (/^[0-9]$/.test(key)) { app.typeDigit(Number(key)); ev.preventDefault(); claimFocus(ev, app); return; }
 
     switch (key) {
-      case 'ArrowLeft': app.moveLeft(); break;
-      case 'ArrowRight': app.moveRight(); break;
+      case 'ArrowLeft': app.moveLeft({ extend: ev.shiftKey }); break;
+      case 'ArrowRight': app.moveRight({ extend: ev.shiftKey }); break;
       case 'ArrowUp': app.moveUp(); break;
       case 'ArrowDown': app.moveDown(); break;
       case 'Home': app.toMeasureStart(); break;
@@ -48,7 +61,7 @@ export function installKeyboard(app) {
       case '.': app.dot(); break;
       case ' ': app.togglePlay(); break;
       case '?': app.dispatch('help'); break;
-      case 'Escape': app.cancelDigits(); app.stop(); break;
+      case 'Escape': app.cancelDigits(); app.stop(); app.clearSelection(); break;
       default:
         switch (key.toLowerCase()) {
           case 't': app.tuplet(3); break;
@@ -62,6 +75,11 @@ export function installKeyboard(app) {
           default: handled = false;
         }
     }
-    if (handled) ev.preventDefault();
+    if (handled) { ev.preventDefault(); claimFocus(ev, app); }
   });
+}
+
+/** After a shortcut fired while some control had focus, hand focus back to the score. */
+function claimFocus(ev, app) {
+  if (ev.target !== app.wrap && ev.target !== document.body) app.focusScore();
 }

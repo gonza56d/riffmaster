@@ -6,7 +6,7 @@ import {
   DURATIONS, DURATION_DIV, beatLength, beatsLength, measureLength, baseLength, cmp, sub, ZERO,
   longer, shorter, makeTuplet,
 } from './duration.js';
-import { createBeat, createMeasure, createNote, createTrack, defaultTrackName, defaultTuning, INSTRUMENTS, isDefaultTrackName, isDrums, noteAt, stringCount, timeSigAt } from './song.js';
+import { createBeat, createMeasure, createNote, createTrack, defaultTrackName, defaultTuning, INSTRUMENTS, isDefaultTrackName, isDrums, isEmptyMeasure, noteAt, stringCount, timeSigAt } from './song.js';
 import { resizeTuning, MAX_FRET } from './tuning.js';
 import { drumInfo } from './drumMap.js';
 
@@ -88,6 +88,11 @@ export function cycleDots(song, cursor) {
   return cursor;
 }
 
+export function setDots(song, cursor, dots) {
+  beatOf(song, cursor).dots = dots;
+  return cursor;
+}
+
 export function setTuplet(song, cursor, n) {
   const beat = beatOf(song, cursor);
   beat.tuplet = n ? makeTuplet(n) : null;
@@ -106,6 +111,14 @@ export function toggleRest(song, cursor) {
   beat.empty = beat.rest && !beat.empty;
   beat.rest = true;
   beat.notes = [];
+  return cursor;
+}
+
+/** `on`: make the beat a rest (dropping its notes). Off: a rest goes back to an empty beat. */
+export function setRest(song, cursor, on) {
+  const beat = beatOf(song, cursor);
+  if (on) Object.assign(beat, { rest: true, empty: false, notes: [] });
+  else if (beat.rest) beat.empty = true;
   return cursor;
 }
 
@@ -267,6 +280,80 @@ export function pasteMeasure(song, cursor, measure) {
   return clampCursor(song, { ...cursor, beat: 0 });
 }
 
+// ---------- selections ----------
+// A selection is a run of beats on one track: { from: { measure, beat }, to: { measure, beat } }, inclusive and in order.
+
+/** Every beat of `track` inside `range`, as { mi, bi, beat }. */
+export function beatsInRange(track, range) {
+  const out = [];
+  for (let mi = range.from.measure; mi <= range.to.measure; mi++) {
+    const beats = track.measures[mi].beats;
+    const last = mi === range.to.measure ? range.to.beat : beats.length - 1;
+    for (let bi = mi === range.from.measure ? range.from.beat : 0; bi <= last; bi++) out.push({ mi, bi, beat: beats[bi] });
+  }
+  return out;
+}
+
+/** Apply a beat-level command (setDuration, cycleDots, toggleRest…) to every beat of the range. */
+export function forRange(song, ti, range, fn) {
+  for (const { mi, bi } of beatsInRange(song.tracks[ti], range)) fn(song, { track: ti, measure: mi, beat: bi, string: 0 });
+}
+
+export function clearRange(song, ti, range) {
+  for (const { beat } of beatsInRange(song.tracks[ti], range)) Object.assign(beat, { rest: true, empty: true, notes: [] });
+}
+
+/** Remove the beats of the range; a measure left without beats gets one empty beat. Returns the cursor. */
+export function deleteRange(song, ti, range) {
+  const track = song.tracks[ti];
+  for (let mi = range.to.measure; mi >= range.from.measure; mi--) {
+    const measure = track.measures[mi];
+    const first = mi === range.from.measure ? range.from.beat : 0;
+    const last = mi === range.to.measure ? range.to.beat : measure.beats.length - 1;
+    measure.beats.splice(first, last - first + 1);
+    if (measure.beats.length === 0) measure.beats.push(createBeat());
+  }
+  return clampCursor(song, { track: ti, measure: range.from.measure, beat: range.from.beat, string: 0 });
+}
+
+/** Clipboard form of a range: beats grouped per measure; `whole` when it covers entire measures. */
+export function copyRange(song, ti, range) {
+  const track = song.tracks[ti];
+  const measures = [];
+  for (const { mi, beat } of beatsInRange(track, range)) (measures[mi - range.from.measure] ??= []).push(structuredClone(beat));
+  const whole = range.from.beat === 0 && range.to.beat === track.measures[range.to.measure].beats.length - 1;
+  return { measures, whole };
+}
+
+/**
+ * Paste a copied range at the cursor, one copied measure per target measure (appending measures at the end).
+ * Whole measures replace the targets; partial ones are inserted at the cursor (later measures at their start),
+ * taking the place of an empty beat there. Returns the range that was pasted.
+ */
+export function pasteRange(song, cursor, clip) {
+  const track = trackOf(song, cursor);
+  let last = null;
+  clip.measures.forEach((copied, i) => {
+    const mi = cursor.measure + i;
+    while (mi >= song.measureHeaders.length) appendMeasure(song);
+    const measure = track.measures[mi];
+    const beats = copied.map((b) => {
+      const clone = structuredClone(b);
+      clone.notes = clone.notes.filter((n) => n.string < stringCount(track));
+      if (clone.notes.length === 0 && !clone.rest) { clone.rest = true; clone.empty = true; }
+      return clone;
+    });
+    let at = 0;
+    if (clip.whole || isEmptyMeasure(measure)) measure.beats = beats;
+    else {
+      at = i === 0 ? cursor.beat : 0;
+      measure.beats.splice(at, measure.beats[at]?.empty ? 1 : 0, ...beats);
+    }
+    last = { measure: mi, beat: at + beats.length - 1 };
+  });
+  return { from: { measure: cursor.measure, beat: clip.whole ? 0 : cursor.beat }, to: last };
+}
+
 // ---------- navigation ----------
 
 export function moveLeft(song, cursor) {
@@ -323,6 +410,14 @@ export function moveMeasure(song, cursor, dir) {
   const n = song.measureHeaders.length;
   const m = Math.max(0, Math.min(n - 1, cursor.measure + dir));
   return { ...cursor, measure: m, beat: 0 };
+}
+
+/** Next beat without creating anything (selection extension); stays put at the end of the song. */
+export function nextBeat(song, cursor) {
+  const track = trackOf(song, cursor);
+  if (cursor.beat < track.measures[cursor.measure].beats.length - 1) return { ...cursor, beat: cursor.beat + 1 };
+  if (cursor.measure < track.measures.length - 1) return { ...cursor, measure: cursor.measure + 1, beat: 0 };
+  return cursor;
 }
 
 export const toMeasureStart = (song, cursor) => ({ ...cursor, beat: 0 });
