@@ -26,3 +26,4 @@ Guitar Pro-like or Songsterr-like application but much more simpler and straight
 - Sign up and log in are optional if you wanna save your composition. (Log out is also needed).
 - Sign up requires email and password. Email must be unique and password must be hashed.
 - Saving your song asks for name.
+- Frontend must be able to host on free github pages, using free firebase as backend only for auth and saving songs.
