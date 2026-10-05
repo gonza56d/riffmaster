@@ -12,7 +12,7 @@ composition rather than practicing or learning songs.
 ## Features
 
 - Dual notation like GP5: standard staff on top, tablature below, for both stringed and percussion tracks.
-- Instruments: distortion guitar (two colours), clean guitar, bass, drums. Sounds are synthesized with
+- Instruments: distortion guitar (two tones, A and B), clean guitar, bass, drums. Sounds are synthesized with
   the Web Audio API (Karplus-Strong plucked strings into an amp chain, synthesized drum kit). No samples.
 - Any number of tracks; stringed tracks have 4–8 strings with presets or custom tunings. Drum tracks use
   the GP5 percussion map (MIDI numbers in the tab, GP5 noteheads on the staff).

@@ -1,4 +1,4 @@
-import { SONG_VERSION, validateSong } from './song.js';
+import { SONG_VERSION, defaultTrackName, validateSong } from './song.js';
 
 export function toJSON(song, pretty = false) {
   return JSON.stringify(song, null, pretty ? 2 : 0);
@@ -7,6 +7,16 @@ export function toJSON(song, pretty = false) {
 const MIGRATIONS = {
   // 0 -> 1: initial versioned format; nothing to do.
   0: (s) => ({ ...s, version: 1 }),
+  // 1 -> 2: the distortion tones were "Distortion Guitar" and "Distortion Guitar 2", so a second
+  // track of the first tone was also auto-named "Distortion Guitar 2". The tones are now A and B;
+  // tracks still carrying a v1 auto-name get a fresh default name, custom names are kept.
+  1: (s) => {
+    const V1_AUTO = /^(Distortion Guitar|Distortion Guitar 2|Clean Guitar|Bass|Drums)( \d+)?$/;
+    const auto = s.tracks.filter((t) => V1_AUTO.test(t.name ?? ''));
+    for (const t of auto) t.name = '';
+    for (const t of auto) t.name = defaultTrackName(s, t.instrument, t);
+    return { ...s, version: 2 };
+  },
 };
 
 export function migrate(song) {

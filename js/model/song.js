@@ -2,11 +2,11 @@ import { beatsLength, measureLength, cmp } from './duration.js';
 import { TUNING_PRESETS } from './tuning.js';
 import { DRUM_TAB_LINES } from './drumMap.js';
 
-export const SONG_VERSION = 1;
+export const SONG_VERSION = 2;
 
 export const INSTRUMENTS = {
-  dist1: { name: 'Distortion Guitar', family: 'guitar', clef: 'treble', color: 'dist1' },
-  dist2: { name: 'Distortion Guitar 2', family: 'guitar', clef: 'treble', color: 'dist2' },
+  dist1: { name: 'Distortion Guitar A', family: 'guitar', clef: 'treble', color: 'dist1' },
+  dist2: { name: 'Distortion Guitar B', family: 'guitar', clef: 'treble', color: 'dist2' },
   clean: { name: 'Clean Guitar', family: 'guitar', clef: 'treble', color: 'clean' },
   bass: { name: 'Bass', family: 'bass', clef: 'bass', color: 'bass' },
   drums: { name: 'Drums', family: 'drums', clef: 'percussion', color: 'drums' },
@@ -48,6 +48,21 @@ export function createTrack(instrument, measureCount, { name, tuning } = {}) {
     solo: false,
     measures: Array.from({ length: measureCount }, createMeasure),
   };
+}
+
+/** Unused default name for a track of `instrument`: the instrument name, then "Name 2", "Name 3"… */
+export function defaultTrackName(song, instrument, except = null) {
+  const base = INSTRUMENTS[instrument].name;
+  const taken = new Set(song.tracks.filter((t) => t !== except).map((t) => t.name));
+  if (!taken.has(base)) return base;
+  let n = 2;
+  while (taken.has(`${base} ${n}`)) n += 1;
+  return `${base} ${n}`;
+}
+
+export function isDefaultTrackName(name, instrument) {
+  const base = INSTRUMENTS[instrument].name;
+  return name === base || (name.startsWith(base) && /^ \d+$/.test(name.slice(base.length)));
 }
 
 export function createSong({ title = 'Untitled', tempo = 120, timeSig = { num: 4, den: 4 }, measures = 4, tracks = ['dist1'] } = {}) {

@@ -6,7 +6,7 @@ import {
   DURATIONS, DURATION_DIV, beatLength, beatsLength, measureLength, baseLength, cmp, sub, ZERO,
   longer, shorter, makeTuplet,
 } from './duration.js';
-import { createBeat, createMeasure, createNote, createTrack, defaultTuning, INSTRUMENTS, isDrums, noteAt, stringCount, timeSigAt } from './song.js';
+import { createBeat, createMeasure, createNote, createTrack, defaultTrackName, defaultTuning, INSTRUMENTS, isDefaultTrackName, isDrums, noteAt, stringCount, timeSigAt } from './song.js';
 import { resizeTuning, MAX_FRET } from './tuning.js';
 import { drumInfo } from './drumMap.js';
 
@@ -197,9 +197,7 @@ export function setTitle(song, title) {
 // ---------- tracks ----------
 
 export function addTrack(song, instrument) {
-  const t = createTrack(instrument, song.measureHeaders.length);
-  const n = song.tracks.filter((x) => x.instrument === instrument).length;
-  if (n > 0) t.name = `${INSTRUMENTS[instrument].name} ${n + 1}`;
+  const t = createTrack(instrument, song.measureHeaders.length, { name: defaultTrackName(song, instrument) });
   song.tracks.push(t);
   return song.tracks.length - 1;
 }
@@ -216,8 +214,12 @@ export function renameTrack(song, ti, name) {
 
 export function setInstrument(song, ti, instrument) {
   const t = song.tracks[ti];
+  if (t.instrument === instrument) return;
   const oldFamily = INSTRUMENTS[t.instrument].family;
+  const renamed = isDefaultTrackName(t.name, t.instrument);
   t.instrument = instrument;
+  // A track still carrying its auto-generated name follows the new instrument; custom names are kept.
+  if (renamed) t.name = defaultTrackName(song, instrument, t);
   if (INSTRUMENTS[instrument].family !== oldFamily) setTrackTuning(song, ti, defaultTuning(instrument));
 }
 

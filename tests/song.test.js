@@ -127,7 +127,7 @@ test('time signature applies forward until a change', () => {
 test('tracks: add/remove/tuning/string count', () => {
   const song = createSong({ measures: 2 });
   const ti = cmd.addTrack(song, 'dist1');
-  assert.equal(song.tracks[ti].name, 'Distortion Guitar 2');
+  assert.equal(song.tracks[ti].name, 'Distortion Guitar A 2');
   assert.equal(song.tracks[ti].measures.length, 2);
   cmd.setFret(song, { track: 0, measure: 0, beat: 0, string: 5 }, 3);
   cmd.setStringCount(song, 0, 4);
@@ -140,6 +140,39 @@ test('tracks: add/remove/tuning/string count', () => {
   assert.equal(cmd.removeTrack(song, 1), true);
   assert.equal(cmd.removeTrack(song, 0), false, 'cannot remove the last track');
   validateSong(song);
+});
+
+test('tracks: any mix of guitar tones gets distinct names', () => {
+  const song = createSong({ measures: 1, tracks: ['dist2'] });
+  for (const inst of ['dist1', 'dist2', 'dist1', 'dist1', 'dist2']) cmd.addTrack(song, inst);
+  assert.deepEqual(song.tracks.map((t) => [t.instrument, t.name]), [
+    ['dist2', 'Distortion Guitar B'],
+    ['dist1', 'Distortion Guitar A'],
+    ['dist2', 'Distortion Guitar B 2'],
+    ['dist1', 'Distortion Guitar A 2'],
+    ['dist1', 'Distortion Guitar A 3'],
+    ['dist2', 'Distortion Guitar B 3'],
+  ]);
+  cmd.removeTrack(song, 3);
+  assert.equal(song.tracks[cmd.addTrack(song, 'dist1')].name, 'Distortion Guitar A 2', 'freed name is reused');
+  cmd.setInstrument(song, 1, 'dist2');
+  assert.equal(song.tracks[1].name, 'Distortion Guitar B 4', 'default name follows the tone');
+  cmd.renameTrack(song, 0, 'Rhythm L');
+  cmd.setInstrument(song, 0, 'dist1');
+  assert.equal(song.tracks[0].name, 'Rhythm L', 'custom name is kept');
+  validateSong(song);
+});
+
+test('v1 songs: colliding auto-named tracks are renamed, custom names kept', () => {
+  const v1 = createSong({ measures: 1, tracks: ['dist1', 'dist1', 'dist1', 'dist1', 'dist2', 'bass', 'bass', 'drums', 'clean'] });
+  const names = ['Distortion Guitar 2', 'Distortion Guitar 2', 'Distortion Guitar 3', 'Distortion Guitar 4', 'Distortion Guitar 2', 'Bass', 'Bass 2', 'Drums', 'My Clean'];
+  v1.tracks.forEach((t, i) => { t.name = names[i]; });
+  const song = fromJSON(JSON.stringify({ ...v1, version: 1 }));
+  assert.equal(song.version, 2);
+  assert.deepEqual(song.tracks.map((t) => t.name), [
+    'Distortion Guitar A', 'Distortion Guitar A 2', 'Distortion Guitar A 3', 'Distortion Guitar A 4',
+    'Distortion Guitar B', 'Bass', 'Bass 2', 'Drums', 'My Clean',
+  ]);
 });
 
 test('clipboard paste clamps to string count', () => {
