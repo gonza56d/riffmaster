@@ -207,6 +207,21 @@ test('v2 songs: lone rests become empty measures, other rests stay rests', () =>
   assert.deepEqual(song.tracks[0].measures[1].beats.map((b) => b.empty), [false, false]);
 });
 
+test('→ keeps the tuplet of the current beat while it fits', () => {
+  const song = createSong({ measures: 1, timeSig: { num: 2, den: 4 } });
+  let c = cursor0;
+  cmd.setDuration(song, c, 'e');
+  cmd.toggleTuplet(song, c, 3);
+  for (let i = 0; i < 5; i++) c = cmd.moveRight(song, c).cursor;
+  const beats = song.tracks[0].measures[0].beats;
+  assert.deepEqual(beats.map((b) => `${b.duration}${b.tuplet ? '/' + b.tuplet.n : ''}`), ['e/3', 'e/3', 'e/3', 'e/3', 'e/3', 'e/3']);
+  assert.equal(measureStatus(song, song.tracks[0], 0), 'complete', 'six triplet eighths fill 2/4');
+  const plain = createSong({ measures: 1 });
+  cmd.setDuration(plain, cursor0, 'e');
+  cmd.moveRight(plain, cursor0);
+  assert.equal(plain.tracks[0].measures[0].beats[1].tuplet, null, 'plain beats stay plain');
+});
+
 test('clipboard paste clamps to string count', () => {
   const song = createSong({ measures: 1, tracks: ['dist1', 'bass'] });
   cmd.setFret(song, { ...cursor0, string: 5 }, 3);

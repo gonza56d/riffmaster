@@ -92,7 +92,7 @@ export function shortcutsDialog() {
     ['0–9', 'Type a fret (two digits within half a second). Drums: MIDI number'],
     ['+ / −', 'Shorter (faster) / longer (slower) note value'],
     ['.', 'Cycle dots'],
-    ['T', 'Toggle triplet'],
+    ['T', 'Triplet on / off (→ keeps entering triplets)'],
     ['R', 'Rest on / off for the beat'],
     ['L', 'Tie to the previous note'],
     ['V S H P X', 'Vibrato, slide, hammer-on/pull-off, palm mute, dead note'],

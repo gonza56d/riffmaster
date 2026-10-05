@@ -290,7 +290,9 @@ export function moveRight(song, cursor) {
   const remaining = sub(measureLength(timeSigAt(song, cursor.measure)), beatsLength(measure.beats));
   if (cmp(remaining, ZERO) > 0) {
     const current = measure.beats[cursor.beat];
-    const beat = createBeat({ duration: fittingDuration(current.duration, remaining) });
+    // Keep entering tuplets like GP5: the new beat copies the tuplet while one more fits.
+    const tuplet = current.tuplet && cmp(beatLength({ duration: current.duration, dots: 0, tuplet: current.tuplet }), remaining) <= 0 ? { ...current.tuplet } : null;
+    const beat = createBeat({ duration: tuplet ? current.duration : fittingDuration(current.duration, remaining), tuplet });
     measure.beats.push(beat);
     return { cursor: { ...cursor, beat: measure.beats.length - 1 }, edited: true };
   }

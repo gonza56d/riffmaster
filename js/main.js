@@ -115,6 +115,7 @@ class App {
       countin: () => { this.countIn = !this.countIn; this.toolbar.update(); },
       duration: () => this.setDuration(value),
       dot: () => this.dot(),
+      triplet: () => this.tuplet(3),
       rest: () => this.rest(),
       tie: () => this.tie(),
       timesig: () => this.editTimeSig(),

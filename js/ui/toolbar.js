@@ -42,8 +42,9 @@ export function buildToolbar(el, app) {
     <div class="group rhythm">
       ${DURATIONS.map((d) => `<button data-action="duration" data-value="${d}" class="icon dur" title="${DURATION_NAMES[d]}">${durationIcon(d)}</button>`).join('')}
       <button data-action="dot" class="icon" title="Dot (.)">•</button>
-      <select data-field="tuplet" title="Tuplet (T toggles triplet)">
-        <option value="">—</option>
+      <button data-action="triplet" class="icon" title="Triplet (T)"><i>3</i></button>
+      <select data-field="tuplet" title="Other tuplets">
+        <option value="">Tuplet</option>
         ${[3, 5, 6, 7, 9, 10, 11, 12, 13].map((n) => `<option value="${n}">${n}:${n <= 3 ? 2 : n <= 7 ? 4 : 8}</option>`).join('')}
       </select>
       <button data-action="rest" class="icon" title="Rest (R)">${restIcon()}</button>
@@ -94,6 +95,7 @@ export function buildToolbar(el, app) {
       el.querySelector('[data-action=dot]').classList.toggle('active', !!beat && beat.dots > 0);
       el.querySelector('[data-action=dot]').textContent = beat && beat.dots === 2 ? '••' : '•';
       tuplet.value = beat && beat.tuplet ? String(beat.tuplet.n) : '';
+      el.querySelector('[data-action=triplet]').classList.toggle('active', beat?.tuplet?.n === 3);
       el.querySelector('[data-action=rest]').classList.toggle('active', !!beat && beat.rest);
       const note = app.currentNote();
       el.querySelector('[data-action=tie]').classList.toggle('active', !!note && note.tie);

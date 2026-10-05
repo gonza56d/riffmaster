@@ -111,6 +111,7 @@ export function drawTuplets(sys, m, layout) {
   let out = '';
   for (const t of m.tuplets) {
     const beats = t.beats.map((bi) => m.beats[bi]);
+    if (beats.every((b) => b.empty)) continue; // nothing entered yet, nothing to bracket
     const first = beats[0], last = beats[beats.length - 1];
     const x1 = first.x - 5, x2 = last.x + 5;
     const xm = (x1 + x2) / 2;
